@@ -1,0 +1,58 @@
+name: Build and push CI/CD Container 
+on:
+  workflow_dispatch:
+    branches:
+      - master
+    paths:
+      - "Dockerfile"
+  push:
+    branches:
+      - "master"
+    paths:
+      - "Dockerfile"
+jobs:
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to the GitHub Actions Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Login to the Quay.io Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Login to the Bahriya Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: bcr.ax
+          username: ${{ secrets.BCR_USERNAME }}
+          password: ${{ secrets.BCR_PASSWORD }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      ## Build and push the Docker image ##
+      - name: Build and push the CLI Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          file: ./Dockerfile
+          push: true
+          tags: |
+            bcr.ax/meezaan/cicd:latest
+            ghcr.io/meezaan/cicd:latest
+            quay.io/meezaan/cicd:latest
+            meezaan/cicd:latest
